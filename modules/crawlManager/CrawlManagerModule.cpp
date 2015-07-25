@@ -7,13 +7,19 @@ using namespace std;
 
 #define DEBUG 1
 
-char ESC=27;
+char ESC=27; // don't know what is for
 
+
+//==========================================================//
+// UPDATE MODULE
+//==========================================================//
 bool CrawlManagerModule::updateModule()
 {
-    if(com==9)
+    if(com==9)  //SI: this will be replaced by something better (TODO)
         return false;
 
+    //SI: long term: this will be replaced by a GUI (TODO)
+    cout << "**********************************"<<endl;
     cout << "Please specify the task" << endl;
     cout << "(1) Go to init pos" << endl;
     cout << "(2) Crawl" << endl;
@@ -21,20 +27,79 @@ bool CrawlManagerModule::updateModule()
     cout << "(4) Slower" << endl;
     cout << "(5) Turn right" << endl;
     cout << "(6) Turn left" << endl;
-    cout <<"(9) Stop" << endl;
+    cout << "(9) Stop" << endl;
+    cout << "**********************************"<<endl;
     
     return true;
 }
 
-///This function switches between behaviors: 
+//==========================================================//
+// GET PERIOD
+//==========================================================//
+double CrawlManagerModule::getPeriod()
+{
+    return 2.0;
+}
 
+//==========================================================//
+// CLOSE
+//==========================================================//
+bool CrawlManagerModule::close()
+{
+    cout<< " ++ CRAWL manager module closing..."<<endl;
+    for(int i=0;i<6;i++)
+        if(connected_part[i]==true)
+        {
+            cout<<"   ++ Closing ports for part "<<i<<endl;
+            parts_port[i].close();
+            check_port[i].close();
+        }
+    cout<<"   ++ Closing port for commands "<<endl;
+    commandPort.close();
+    return true;
+}
+
+
+//==========================================================//
+//  RESPOND
+//==========================================================//
+/*
+ This function switches between behaviors
+ It takes the input command from keyboard -> there is the attachTerminal()
+ and calls the proper action for each command
+*/
 bool CrawlManagerModule::respond(const Bottle& command, Bottle& reply)
 {
   com = command.get(0).asInt();
-  cout << "soos " << com << endl;
+  cout << "received command == " << com << endl;
   
    switch(com)
-    {   
+    {
+            
+        case 0: /// toggling verbosity level
+            
+            if(verbosity_debug==0)
+            {
+                verbosity_debug=1;
+                reply.addString("verbosity from 0 to 1 (some printing)");
+            }
+            else if(verbosity_debug==1)
+            {
+                verbosity_debug=2;
+                reply.addString("verbosity from 1 to 2 (all printing)");
+            }
+            else if(verbosity_debug==2)
+            {
+                verbosity_debug=0;
+                reply.addString("verbosity from 2 to 0 (no printing)");
+            }
+            else
+            {
+                reply.addString("nothing done");
+            }
+            break;
+            
+            
         case 1: /// - on all fours
         
 			InitPosition();
@@ -78,8 +143,10 @@ bool CrawlManagerModule::respond(const Bottle& command, Bottle& reply)
             reply.addString("turning left");
             
             break;
+            
 
 
+        //=========added by Seb=========
 		case SEB_TURN_COMMAND: ///- turn to avoid obstacles 
         {
             double angle = command.get(1).asDouble();
@@ -99,6 +166,7 @@ bool CrawlManagerModule::respond(const Bottle& command, Bottle& reply)
 			double yawAngle = command.get(2).asDouble();
 
 			HeadControl(pitchAngle, yawAngle);
+            reply.addString("rotate head");
 			
 			break;
 		}
@@ -116,14 +184,14 @@ bool CrawlManagerModule::respond(const Bottle& command, Bottle& reply)
 
 		case 9: /// - emergency stop  (will stop the module)
                 
-            crawl_left_parameters[9][1]=turnAngle; 
+            crawl_left_parameters[9][1]=turnAngle; //???? SI: not safe, to be changed (TODO)
             
             //if the robot is not crawling, we go to an intermediate position
             //otherwise, we do nothing
             if(STATE==CRAWL)
             {
                 int side=0;
-                while(side==0) side=getSwingingArm();
+                while(side==0) side=getSwingingArm();  //???? SI
                 
                 if(side==LEFT_ARM)
                 {
@@ -142,7 +210,7 @@ bool CrawlManagerModule::respond(const Bottle& command, Bottle& reply)
             
             reply.addString("Closing... ");
             
-            crawl_left_parameters[9][1]=0.0;
+            crawl_left_parameters[9][1]=0.0; //???? SI: not safe, to be changed (TODO)
             
             break;
 
@@ -153,7 +221,13 @@ bool CrawlManagerModule::respond(const Bottle& command, Bottle& reply)
         
     return true;
        
-}    
+}
+
+
+
+
+
+
 //CT(22-3-2011) change open(Searchable &s) for configure(yarp::os::ResourceFinder &rf)
 bool CrawlManagerModule::configure(yarp::os::ResourceFinder &rf)
 {
@@ -406,11 +480,16 @@ bool CrawlManagerModule::configure(yarp::os::ResourceFinder &rf)
     }*/
 	//=========END added by Seb=========
 
+    verbosity_debug=2; //SI: for the moment, then it must be read from file (TODO)
       
     return true;
 
 }
 
+
+//==========================================================//
+//  GET SWINGING ARM / SIDE
+//==========================================================//
 ///This function returns which arm is in the swinging phase according to the cpgs info 
 ///(1= left arm, -1= right arm, 0= no info or not applicable)
 int CrawlManagerModule::getSwingingArm()
@@ -440,7 +519,15 @@ int CrawlManagerModule::getSwingingArm()
     return side; 
 }
 
-///This functions sends the command parameters to the different generators
+
+//==========================================================//
+//  SEND COMMAND TO GENERATORS
+//==========================================================//
+/*
+ This function sends the command parameters to the different generator.
+ i= the index of the body part
+ params= the parameters of the generator: amplitude, target, stance, swing, angle
+ */
 void CrawlManagerModule::sendCommand(int i, vector<vector<double> > params)
 {
     Bottle& paramBot = parts_port[i].prepare();
@@ -455,38 +542,25 @@ void CrawlManagerModule::sendCommand(int i, vector<vector<double> > params)
     paramBot.addDouble(turnAngle);
     parts_port[i].write();
                             
-    #if DEBUG
-    printf("SENDING COMMAND TO PART %s:\n", part_names[i].c_str());
-    printf("amplitudes ( ");
-    for(int j=0; j<nbDOFs[i]; j++) 
-        printf("%f ", params[2*i][j]);
+    if(verbosity_debug>1)
+    {
+        printf("SENDING COMMAND TO PART %s:\n", part_names[i].c_str());
+        printf("amplitudes ( ");
+        for(int j=0; j<nbDOFs[i]; j++)
+            printf("%f ", params[2*i][j]);
 
-    printf(")\ntargets (");
-    for(int j=0; j<nbDOFs[i]; j++) 
-        printf("%f ", params[2*i+1][j]);
+        printf(")\ntargets (");
+        for(int j=0; j<nbDOFs[i]; j++)
+            printf("%f ", params[2*i+1][j]);
         
-    printf(")\n om_stance %f, om_swing %f, turnAngle %f\n\n", om_stance[i], om_swing[i], turnAngle);  
-    #endif                         
+        printf(")\n om_stance %f, om_swing %f, turnAngle %f\n\n", om_stance[i], om_swing[i], turnAngle);
+    }
 }
 
-double CrawlManagerModule::getPeriod()
-{
-    return 2.0;
-}
- 
-bool CrawlManagerModule::close()
-{
-	printf( "crawl manager module closing...");
-    for(int i=0;i<6;i++)
-        if(connected_part[i]==true) 
-		{
-			parts_port[i].close();
-			check_port[i].close();
-		}
-	commandPort.close();
-    return true;
-}
 
+//==========================================================//
+//  INIT POSITION
+//==========================================================//
 void CrawlManagerModule::InitPosition(void)
 {
     //if the robot crawls, we need to check if it safe before going on all fours
@@ -497,8 +571,8 @@ void CrawlManagerModule::InitPosition(void)
         {
             while(turnAngle < -0.001)
             {
-                turnAngle+=TURN_INDENT;
-                crawl_parameters[9][1]=turnAngle;
+                turnAngle+=TURN_INDENT;   //SI: to change, since INDENT is bigger than the threshold (TODO)
+                crawl_parameters[9][1]=turnAngle;  //SI: ??
                 for(int i=0;i<nbParts;i++)
                     if(connected_part[i]) sendCommand(i, crawl_parameters);
                 Time::delay(1.0);
@@ -509,8 +583,8 @@ void CrawlManagerModule::InitPosition(void)
         {
             while(turnAngle > 0.001)
             {
-                turnAngle-=TURN_INDENT;
-                crawl_parameters[9][1]=turnAngle;
+                turnAngle-=TURN_INDENT; //SI: to change, since INDENT is bigger than the threshold (TODO)
+                crawl_parameters[9][1]=turnAngle; // SI: ??
                 for(int i=0;i<nbParts;i++)
                     if(connected_part[i]) sendCommand(i, crawl_parameters);
                 Time::delay(1.0);
@@ -524,7 +598,7 @@ void CrawlManagerModule::InitPosition(void)
         	side=getSwingingArm();
         }
         
-		cout << "side : " << side << endl;
+        if(verbosity_debug>0) cout << "current swing side : " << side << endl;
 
         if(side==LEFT_ARM)
         {
@@ -542,7 +616,10 @@ void CrawlManagerModule::InitPosition(void)
     }
     
     //we can now send the init position
-    //the stance frequency om_stance is reinitialized            
+    //the stance frequency om_stance is reinitialized
+    
+    if(verbosity_debug>0) cout << "sending the initialisation position "<< endl;
+    
     for(int i=0;i<nbParts;i++)
 	{
         if(connected_part[i])
@@ -556,6 +633,9 @@ void CrawlManagerModule::InitPosition(void)
 }
 
 
+//==========================================================//
+//  CRAWL
+//==========================================================//
 void CrawlManagerModule::Crawl(double desiredTurnAngle, double stanceIncrement)
 {
 	if(desiredTurnAngle > MAX_TURN_ANGLE)
@@ -613,6 +693,8 @@ void CrawlManagerModule::Crawl(double desiredTurnAngle, double stanceIncrement)
     //if the robot is not crawling, we go first to an intermediate position
     if(STATE!=CRAWL)
     {
+        if(verbosity_debug>0) cout<<"Bringing the robot to an initial configuration for crawling"<<endl;
+        
         for(int i=0;i<nbParts;i++)
             if(connected_part[i])
 			{
@@ -634,6 +716,10 @@ void CrawlManagerModule::Crawl(double desiredTurnAngle, double stanceIncrement)
     STATE = CRAWL;
 }
 
+
+//==========================================================//
+//  REACH
+//==========================================================//
 void CrawlManagerModule::Reach(Bottle *reachingCommand)
 {
 	printf("command : %s\n",reachingCommand->toString().c_str());
@@ -701,6 +787,10 @@ void CrawlManagerModule::Reach(Bottle *reachingCommand)
 	}
 }
 
+
+//==========================================================//
+//  HEAD CONTROL
+//==========================================================//
 void CrawlManagerModule::HeadControl(double pitchAngle, double yawAngle)
 {
 	vector<vector<double> > head_parameters;

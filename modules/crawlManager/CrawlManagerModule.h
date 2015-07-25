@@ -26,8 +26,15 @@ using namespace yarp::dev;
 #define CRAWL 1
 #define REACH 2
 
-#define COMMAND_PORT_NAME "/manager/in" // port to receive command from the reachingManager or planner
+#define COMMAND_PORT_NAME "/crawlManager/in" // port to receive command from the reachingManager or planner
+                                            //SI: this must be changed into a param from config file (TODO)
+//before it was:
+//#define COMMAND_PORT_NAME "/manager/in" // port to receive command from the reachingManager or planner
 
+
+
+
+//SI: all these parameters have to become parameters that can be loaded from config file and changed (TODO)
 #define TURN_INDENT 0.05 //increment in radians
 #define STANCE_INDENT 0.05 //increment in radians
 #define MAX_TURN_ANGLE 0.5
@@ -90,37 +97,42 @@ using namespace yarp::dev;
 
 class CrawlManagerModule : public RFModule
 {
-   //CT(22-3-2011): all the parameters from the ini file: 
-	std::string moduleName;
-    std::string robotName; 
-
+   
     private:
     
-        static const int nbParts = 6; //number of limbs   	   
-        int nbDOFs[nbParts]; //nb of dofs for each part
-        ConstString part_names[nbParts]; // names of the different parts 
-        bool connected_part[nbParts]; //true if part is connected, false otherwise
+    int verbosity_debug; //verbosity level for the debug messages
+                         // 0=no debug 1=some prints but not in cycles 2=all prints
+    
+    //CT(22-3-2011): all the parameters from the ini file:
+    std::string moduleName;
+    std::string robotName;
+    
+    static const int nbParts = 6; //number of limbs
+    int nbDOFs[nbParts]; //nb of dofs for each part
+    ConstString part_names[nbParts]; // names of the different parts
+    
+    bool connected_part[nbParts]; //true if part is connected, false otherwise
 
-        BufferedPort<Bottle> parts_port[nbParts]; //ports to send the parameters to the generators
-        BufferedPort<Bottle> check_port[nbParts]; //ports to check the current status of the cpgs
-        BufferedPort<Bottle> commandPort; // ports getting the command from the reachManager and the planner
+    BufferedPort<Bottle> parts_port[nbParts]; //ports to send the parameters to the generators
+    BufferedPort<Bottle> check_port[nbParts]; //ports to check the current status of the cpgs
+    BufferedPort<Bottle> commandPort; // ports getting the command from the reachManager and the planner
 
-		int STATE; //current behavior (INIT_POS; CRAWL; NOT_SET)
-        int com; //command to switch between ehaviors
+    int STATE; //current behavior (INIT_POS; CRAWL; NOT_SET)
+    int com; //command to switch between behaviors
 
-        Property options; //getting the info in the config file
-        vector<vector<double> > init_parameters, crawl_parameters;//parameters for init pos (on all fours) and crawling
-        vector<vector<double> > crawl_left_parameters, crawl_right_parameters; //intermediate pose (left (right) arm lifted) 
-        vector<double> om_swing, om_stance; //control the duration of the swing and the stance resp. 
-        double turnAngle; //set point of the torso roll (controls the turning)
+    Property options; //getting the info in the config file
+    vector<vector<double> > init_parameters, crawl_parameters;//parameters for init pos (on all fours) and crawling
+    vector<vector<double> > crawl_left_parameters, crawl_right_parameters; //intermediate pose (left (right) arm lifted)
+    vector<double> om_swing, om_stance; //control the duration of the swing and the stance resp.
+    double turnAngle; //set point of the torso roll (controls the turning)
 
-        void sendCommand(int i, vector<vector<double> > params);//function sending commands to the generator
-        int getSwingingArm();//function getting which arm is swinging
+    void sendCommand(int i, vector<vector<double> > params);//function sending commands to the generator
+    int getSwingingArm();//function getting which arm is swinging
 
-		void InitPosition(void);
-		void Crawl(double desiredTurnAngle=0,double omstanceIncrement=0);
-		void Reach(Bottle *reachingCommand);
-		void HeadControl(double pitchAngle, double yawAngle);
+    void InitPosition(void);
+    void Crawl(double desiredTurnAngle=0,double omstanceIncrement=0);
+    void Reach(Bottle *reachingCommand);
+    void HeadControl(double pitchAngle, double yawAngle);
    
     public:
     
