@@ -120,7 +120,7 @@ class CrawlManagerModule : public RFModule
     int STATE; //current behavior (INIT_POS; CRAWL; NOT_SET)
     int com; //command to switch between behaviors
 
-    Property options; //getting the info in the config file
+    //SI Property options; //getting the info in the config file
     vector<vector<double> > init_parameters, crawl_parameters;//parameters for init pos (on all fours) and crawling
     vector<vector<double> > crawl_left_parameters, crawl_right_parameters; //intermediate pose (left (right) arm lifted)
     vector<double> om_swing, om_stance; //control the duration of the swing and the stance resp.

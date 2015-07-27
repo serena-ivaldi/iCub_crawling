@@ -227,12 +227,12 @@ bool CrawlManagerModule::respond(const Bottle& command, Bottle& reply)
 
 
 
-
+//==========================================================//
+//  RESPOND
+//==========================================================//
 //CT(22-3-2011) change open(Searchable &s) for configure(yarp::os::ResourceFinder &rf)
 bool CrawlManagerModule::configure(yarp::os::ResourceFinder &rf)
 {
-	// CT(22-3-2011)replaced s.toString() for rf.toString()
-	Property arguments(rf.toString());
 		
     /* Process all parameters from both command-line and .ini file */
     /* get the module name which will form the stem of all module port names */
@@ -240,27 +240,8 @@ bool CrawlManagerModule::configure(yarp::os::ResourceFinder &rf)
                            Value("CrawlManager"), 
                            "module name (string)").asString();
     
-	//we get the config file
-	/* CT: Became comment after the resource finder module update*/
-	/*  if(arguments.check("file"))
-	{
-		options.fromConfigFile(arguments.find("file").asString().c_str());
-	}
-    else
-    {
-    	const char *cubPath;
-    	cubPath = yarp::os::getenv("ICUB_ROOT"); //previously set to ICUB_DIR
-    	if(cubPath == NULL) {
-    		printf("generatorThread::init>> ERROR getting the environment variable ICUB_DIR, exiting\n");
-    		return false;
-    	}
-    	string cubPathStr(cubPath);
-    	options.fromConfigFile((cubPathStr + "/app/crawlingApplication/conf/managerConfig.ini").c_str());
-	}
+	
 
-	*/
-
-    options.toString();
     
     Time::turboBoost();
     
@@ -279,9 +260,9 @@ bool CrawlManagerModule::configure(yarp::os::ResourceFinder &rf)
     vector<double> init_ampl;
     vector<double> init_target;
 
-    //we connect to the ports
+    //we connect to the ports of the crawl Generators
     for(int i=0;i<nbParts;i++)
-    {                      
+    {
         char tmp1[255],tmp2[255];
         sprintf(tmp1,"/%s/parameters/in",part_names[i].c_str());
 
@@ -471,7 +452,7 @@ bool CrawlManagerModule::configure(yarp::os::ResourceFinder &rf)
 	//=========START added by Seb=========
 	commandPort.open(COMMAND_PORT_NAME);
 		attachTerminal();
-	printf("CommandPort attaching");
+	printf("Attcahing CommandPort to the terminal");
 
 	//the constructor of bufferedport is already doing the attach right?? How can I change the !attach question to veryfy this??
     /*if(!(attach(commandPort,true)))
