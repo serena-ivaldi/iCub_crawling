@@ -50,7 +50,7 @@ bool CrawlGeneratorModule::close()
 
 bool CrawlGeneratorModule::configure(yarp::os::ResourceFinder &rf)
 {
-	Property options(rf.toString());
+	Property options(rf.toString().c_str());
 	int period = 25; // in ms
 
 	if(options.check("period"))

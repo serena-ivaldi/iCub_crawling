@@ -527,7 +527,7 @@ void GeneratorThread::threadRelease()
 bool GeneratorThread::init(yarp::os::ResourceFinder &rf)//CTmodified: init(Searchable &s)
 {
 
-	Property arguments(rf.toString());//CTmodified: Property arguments(s.toString());
+	Property arguments(rf.toString().c_str());//CTmodified: Property arguments(s.toString());
 	Time::turboBoost();
 
 	current_action = false;
