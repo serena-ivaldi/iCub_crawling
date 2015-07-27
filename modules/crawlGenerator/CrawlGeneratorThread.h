@@ -28,7 +28,7 @@
 #ifndef CrawlGeneratorThread__H
 #define CrawlGeneratorThread__H
 
-include <yarp/os/all.h>
+#include <yarp/os/all.h>
 #include <yarp/dev/Drivers.h>
 #include <yarp/dev/PolyDriver.h>
 #include <yarp/dev/ControlBoardInterfaces.h>
