@@ -1,28 +1,26 @@
 cmake_minimum_required(VERSION 2.8)
 
-if(COMMAND cmake_policy)
-      cmake_policy(SET CMP0003 NEW)
-endif(COMMAND cmake_policy)
+set(PROJECTNAME crawlGenerator)
+project(${PROJECTNAME})
 
-SET(KEYWORD "crawlGeneratorModule")
-SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
-PROJECT(${KEYWORD})
 
 FIND_PACKAGE(YARP)
 FIND_PACKAGE(ICUB)
-# find_package(OpenCV)
+list(APPEND CMAKE_MODULE_PATH ${YARP_MODULE_PATH})
+list(APPEND CMAKE_MODULE_PATH ${ICUB_MODULE_PATH})
 
+INCLUDE_DIRECTORIES(${iKin_INCLUDE_DIRS} ${ICUB_INCLUDE_DIRS} ${YARP_INCLUDE_DIRS})
 
-INCLUDE_DIRECTORIES(${iKin_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS} ${ICUB_INCLUDE_DIRS} ${YARP_INCLUDE_DIRS})
 
 FILE(GLOB folder_source *.cpp)
 FILE(GLOB folder_header *.h)
 SOURCE_GROUP("Source Files" FILES ${folder_source})
 SOURCE_GROUP("Header Files" FILES ${folder_header})
 
+
 IF(folder_source)
-    ADD_EXECUTABLE(${KEYWORD}
+    ADD_EXECUTABLE(${PROJECTNAME}
         ${folder_source}
         ${folder_header}
     )
@@ -32,7 +30,7 @@ ENDIF (folder_source)
 
 SOURCE_GROUP("Source Files" FILES ${folder_source})
 
-TARGET_LINK_LIBRARIES(${KEYWORD} ${ICUB_LIBRARIES} ${YARP_LIBRARIES} ${OpenCV_LIBRARIES})
-INSTALL(TARGETS ${KEYWORD} DESTINATION ${ICUB_DIR}/bin)
+TARGET_LINK_LIBRARIES(${PROJECTNAME} ${YARP_LIBRARIES} ${ICUB_LIBRARIES})
+INSTALL(TARGETS ${PROJECTNAME} DESTINATION ${ICUB_DIR}/bin)
 
 
