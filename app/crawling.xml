@@ -1,0 +1,71 @@
+<application>
+    <!-- Generic information-->
+    <name>Crawling</name>
+    <description>Crawling application for the iCub</description>
+    <version>0.0.1</version>
+
+    <authors>
+        <author email=""> author.name </author>
+    </authors>
+
+    <!-- Required modules -->
+    <module>
+        <name>velocityControl</name>
+        <parameters>--robot icubSim --part left_arm --period 10</parameters>
+        <node>localhost</node>
+    </module>
+    <module>
+        <name>velocityControl</name>
+        <parameters>--robot icubSim --part right_arm --period 10</parameters>
+        <node>localhost</node>
+    </module>
+    <module>
+        <name>velocityControl</name>
+        <parameters>--robot icubSim --part left_leg --period 10</parameters>
+        <node>localhost</node>
+    </module>
+    <module>
+        <name>velocityControl</name>
+        <parameters>--robot icubSim --part right_leg --period 10</parameters>
+        <node>localhost</node>
+    </module>
+    <module>
+        <name>velocityControl</name>
+        <parameters>--robot icubSim --part head --period 10</parameters>
+        <node>localhost</node>
+    </module>
+    <module>
+        <name>velocityControl</name>
+        <parameters>--robot icubSim --part torso --period 10</parameters>
+        <node>localhost</node>
+    </module>
+
+
+    <name>crawlGenerator</name>
+        <parameters>--part left_arm --file left_armConfig.ini</parameters>
+    <node>localhost</node>
+    <name>crawlGenerator</name>
+        <parameters>--part right_arm --file right_armConfig.ini</parameters>
+    <node>localhost</node>
+    <name>crawlGenerator</name>
+        <parameters>--part left_leg --file left_legConfig.ini</parameters>
+    <node>localhost</node>
+    <name>crawlGenerator</name>
+        <parameters>--part right_leg --file right_legConfig.ini</parameters>
+    <node>localhost</node>
+    <name>crawlGenerator</name>
+        <parameters>--part head --file headConfig.ini</parameters>
+    <node>localhost</node>
+    <name>crawlGenerator</name>
+        <parameters>--part torso --file torsoConfig.ini</parameters>
+    <node>localhost</node>
+</module>
+
+<!-- Required connections -->
+<connection>
+    <from></from>
+    <to></to>
+    <protocol></protocol>
+</connection>
+
+</application>
