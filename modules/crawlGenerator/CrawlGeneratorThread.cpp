@@ -511,8 +511,8 @@ void GeneratorThread::threadRelease()
 	delete[] jointMapping;
 	delete[] initPos;
 
-	//delete myCpg;
-	//delete myIK;
+	delete myCpg;
+	delete myIK;
 
 	fclose(target_file);
 	fclose(parameters_file);
