@@ -23,8 +23,15 @@ How to use it on iCub:
 
 1. launch wholeBodyTorqueObserver
 2. launch gravityComp
-3. launch crawlGenerator (x6) .. one for each limb! (RA, LA, RL, LL, TO, HE)
-4. launch crawlManager
+3. launch the velocity control module for each limb
+    ~~~
+    velocityControl --robot icub --part head --period 10
+    ~~~
+4. launch crawlGenerator (x6) .. one for each limb! (RA, LA, RL, LL, TO, HE) using a command like
+    ~~~
+    ./crawlGenerator --part head --file ../app/contexts/crawling/left_legConfig.ini
+    ~~~
+5. launch crawlManager
 
 The terminal is used to choose the appropriate action to do:
 
