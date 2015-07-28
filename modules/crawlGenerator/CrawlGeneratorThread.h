@@ -34,6 +34,7 @@
 #include <yarp/dev/ControlBoardInterfaces.h>
 #include <yarp/os/RateThread.h>
 #include <yarp/os/RFModule.h>
+#include <yarp/os/LogStream.h>
 
 #include <stdio.h>
 #include <iostream>
@@ -156,6 +157,9 @@ class GeneratorThread : public yarp::os::RateThread
     IEncoders *PartEncoders; /**< Missing Description */
     IKManager *myIK;/**< Missing Description */
     ITorqueControl *PartTorques;
+    //IVelocityControl *partVel; //SI
+    IControlMode2 *ictrl; // interface used to switch the  control mode for the actuators
+
 
     BufferedPort<Bottle> vcControl_port; /**< Port of the velocity controller */
     BufferedPort<Bottle> vcFastCommand_port; /**< The velocity controller FastCommand port. MISSING */

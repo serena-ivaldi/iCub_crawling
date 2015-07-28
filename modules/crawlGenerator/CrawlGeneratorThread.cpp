@@ -431,13 +431,13 @@ void GeneratorThread::disconnectPorts()
 #if !DEBUG
 
 	sprintf(tmp1,"/%s/vcControl",partName.c_str());
-	sprintf(tmp2,"/icub/vc/%s/input",partName.c_str());
+	sprintf(tmp2,"/icubSim/vc/%s/input",partName.c_str());
 	if(Network::isConnected(tmp1,tmp2))
 		Network::disconnect(tmp1,tmp2);
 	vcControl_port.close();
 
 	sprintf(tmp1,"/%s/vcFastCommand",partName.c_str());
-	sprintf(tmp2,"/icub/vc/%s/fastCommand",partName.c_str());
+	sprintf(tmp2,"/icubSim/vc/%s/fastCommand",partName.c_str());
 	if(Network::isConnected(tmp1,tmp2))
 		Network::disconnect(tmp1,tmp2);
 	vcFastCommand_port.close();
@@ -493,6 +493,13 @@ void GeneratorThread::threadRelease()
 
 
 #endif
+
+
+	for (int i=0; i<nbDOFs; i++)
+	{
+		// set the control mode to velocity
+		ictrl->setControlMode(jointMapping[i], VOCAB_CM_POSITION);
+	}
 
 	disconnectPorts();
 
@@ -619,7 +626,7 @@ bool GeneratorThread::init(yarp::os::ResourceFinder &rf)//CTmodified: init(Searc
 	ddOptions.put("device","remote_controlboard");
 
 	sprintf(tmp1,"/%s/enc",partName.c_str());
-	sprintf(tmp2,"/icub/%s",partName.c_str());
+	sprintf(tmp2,"/icubSim/%s",partName.c_str());
 
 	ddOptions.put("local",tmp1);
 	ddOptions.put("remote",tmp2);
@@ -648,6 +655,20 @@ bool GeneratorThread::init(yarp::os::ResourceFinder &rf)//CTmodified: init(Searc
 		return false;
 	}
 
+	//vel interface
+	// if(!ddPart->view(PartVel))
+	// {
+	// 	printf("Cannot view the velocity interface of %s\n",partName.c_str());
+	// 	return false;
+	// }
+
+	//vel interface
+	if(!ddPart->view(ictrl))
+	{
+		printf("Cannot view the control interface of %s\n",partName.c_str());
+		return false;
+	}
+
 	///////////////////////////////////////////////////////////////////////
 	////////Connection to the velocity control module//////////////////////
 	///////////////////////////////////////////////////////////////////////
@@ -660,7 +681,7 @@ bool GeneratorThread::init(yarp::os::ResourceFinder &rf)//CTmodified: init(Searc
 		return false;
 	}
 
-	sprintf(tmp2,"/icub/vc/%s/input",partName.c_str());
+	sprintf(tmp2,"/icubSim/vc/%s/input",partName.c_str());
 
 	if(!Network::connect(tmp1,tmp2))
 	{
@@ -678,7 +699,7 @@ bool GeneratorThread::init(yarp::os::ResourceFinder &rf)//CTmodified: init(Searc
 		return false;
 	}
 
-	sprintf(tmp2,"/icub/vc/%s/fastCommand",partName.c_str());
+	sprintf(tmp2,"/icubSim/vc/%s/fastCommand",partName.c_str());
 
 	if(!Network::connect(tmp1,tmp2,"udp"))
 	{
@@ -874,6 +895,15 @@ bool GeneratorThread::init(yarp::os::ResourceFinder &rf)//CTmodified: init(Searc
 		return false;
 	}
 
+	// FIXME: this code is isolated from its siblings, it makes the program
+	// harder to read
+	for (int i=0; i<nbDOFs; i++)
+	{
+		// set the control mode to velocity
+		yDebug() << "Setting velocity mode for joint" << jointMapping[i];
+		ictrl->setControlMode(jointMapping[i], VOCAB_CM_VELOCITY);
+	}
+
 #if !DEBUG
 	/* Add run command on each joint to start the velocity controller */
 	for(int i=0;i<nbDOFs;i++)
@@ -1017,6 +1047,12 @@ bool GeneratorThread::init(yarp::os::ResourceFinder &rf)//CTmodified: init(Searc
 		printf("Please specify lower joint limit, part %s\n",partName.c_str());
 		return false;
 	}
+
+
+
+
+
+
 
 	///we create the vectors
 	fflush(stdout);

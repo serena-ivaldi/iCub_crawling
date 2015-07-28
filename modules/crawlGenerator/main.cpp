@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
 	rf.setVerbose(true);
 	/* CT: Added to direct to the other body parts*/
 	//rf.setDefaultConfigFile("headConfig.ini"); // ICUB_ROOT\contrib\src\crawlingTest\src\crawlHeadControl\release\config.ini
-	rf.setDefaultContext("crawlingApplication/conf");
+	rf.setDefaultContext("crawling");
 	rf.setDefaultConfigFile("crawling_generator_config.ini");
 	rf.configure(argc, argv);
 
