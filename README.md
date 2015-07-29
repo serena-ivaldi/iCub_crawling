@@ -2,9 +2,7 @@
 
 This is the repo for new code for the iCub crawling. The code is under development :)
 
-## Porting the old modules
-
-### Overview of the modules
+## Overview of the modules
 
 CrawlManager:
 
@@ -28,41 +26,7 @@ CrawlGenerator:
 - one instance of CrawlGenerator needs a corresponding one of velocityControl
 
 
-### How to use it
-
-For now, the ports the crawlGenerator connects to are hard-coded in the source. Thus, it would only work with iCub_SIM out of the box but one could change the port names in `generatorThread.cpp` to use the Gazebo simulator or the actual robot. Also the application description file `crawling.xml` should be adapted.
-
-How to use it on iCub:
-
-1. launch wholeBodyTorqueObserver
-2. launch gravityComp
-3. move to the `crawlGenerator/app` folder
-4. launch the yarp manager with the application description for the crawlGenerator module
-    ~~~
-    yarpmanager --application yarpmananger/crawling.xml
-    ~~~
-    One only needs to open the Crawling applicaion (couble-click on it) and launch it by pressing the green button with a play-like shape.
-5. launch crawlManager
-
-The terminal is used to choose the appropriate action to do:
-
-1. init pos
-2. crawl straight
-3. faster
-4. slower
-5. turn right
-6. turn left
-9. stop (also closes the manager module)
-
-
-## Gazebo
-- launch yarpserver
-- lauch Gazebo
-- cd app
-- yarpmanager --application yarpmananger/
-
-
-### Compiling and installation
+## Compiling and installation
 
 For the three modules:
 
@@ -90,3 +54,40 @@ cd build
 ccmake ..
 make
 ~~~
+
+To allow the programs to be executed without the need to explicitly type theyr path, one has also to update the `PATH` environment variable as follows. `pathToTheRepository` has to be changed to the real path to this code source.
+
+~~~shell
+export crawling_root=/pathToTheRepository/iCub_crawling
+export PATH=$PATH:$crawling_root/modules/crawlGenerator/build:$crawling_root/modules/crawlManager/build
+export PATH=$PATH:$crawling_root/app/contexts/crawling
+~~~
+
+It is possible not to do this, but then yarpmanager won't be able to find the crawlGenerator modules.
+
+
+## How to use it
+
+For now, the ports the crawlGenerator connects to are hard-coded in the source. Thus, it would only work with iCub_SIM out of the box but one could change the port names in `generatorThread.cpp` to use the Gazebo simulator or the actual robot. Also the application description file `crawling.xml` should be adapted.
+
+How to use it on iCub:
+
+1. start the yarp server with `yarpserver`
+2. start the gazebo simulator and insert the iCub into the world
+3. move to the `app` folder
+4. launch the yarp manager with the application description for the crawlGenerator module
+    ~~~
+    yarpmanager --application yarpmananger/crawling-gazebo.xml
+    ~~~
+    One only needs to open the Crawling applicaion (couble-click on it) and launch it by pressing the green button with a play-like shape.
+5. launch crawlManager (from `modules/crawlManager/build`)
+
+The terminal is used to choose the appropriate action to do:
+
+1. init pos
+2. crawl straight
+3. faster
+4. slower
+5. turn right
+6. turn left
+9. stop (also closes the manager module)
