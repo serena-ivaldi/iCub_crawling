@@ -42,34 +42,46 @@
 
     <module>
         <name>crawlGenerator</name>
-        <parameters>--part left_arm --file ../contexts/crawling/left_armConfig.ini</parameters>
+        <parameters>--part left_arm --file contexts/crawling/left_armConfig.ini</parameters>
         <node>localhost</node>
     </module>
     <module>
         <name>crawlGenerator</name>
-        <parameters>--part right_arm --file ../contexts/crawling/right_armConfig.ini</parameters>
+        <parameters>--part right_arm --file contexts/crawling/right_armConfig.ini</parameters>
         <node>localhost</node>
     </module>
     <module>
         <name>crawlGenerator</name>
-        <parameters>--part left_leg --file ../contexts/crawling/left_legConfig.ini</parameters>
+        <parameters>--part left_leg --file contexts/crawling/left_legConfig.ini</parameters>
         <node>localhost</node>
     </module>
     <module>
         <name>crawlGenerator</name>
-        <parameters>--part right_leg --file ../contexts/crawling/right_legConfig.ini</parameters>
+        <parameters>--part right_leg --file contexts/crawling/right_legConfig.ini</parameters>
         <node>localhost</node>
     </module>
     <module>
         <name>crawlGenerator</name>
-        <parameters>--part head --file ../contexts/crawling/headConfig.ini</parameters>
+        <parameters>--part head --file contexts/crawling/headConfig.ini</parameters>
         <node>localhost</node>
     </module>
     <module>
         <name>crawlGenerator</name>
-        <parameters>--part torso --file ../contexts/crawling/torsoConfig.ini</parameters>
+        <parameters>--part torso --file contexts/crawling/torsoConfig.ini</parameters>
         <node>localhost</node>
     </module>
+
+    <!-- <module>
+        <name>wholeBodyTorqueObserver</name>
+        <node>localhost</node>
+    </module>
+
+    <module>
+        <name>gravityCompensator</name>
+        <node>localhost</node>
+    </module> -->
+
+
 
 
     <!-- Required connections -->
