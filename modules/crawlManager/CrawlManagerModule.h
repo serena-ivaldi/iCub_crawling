@@ -43,6 +43,11 @@ using namespace yarp::dev;
 #define REACH_COMMAND 66 // added by Seb
 #define HEAD_ROT_COMMAND 55 // added by Seb
 
+#define CONNECTION_PORT_ERROR -2
+#define CONNECTION_ALL_GOOD 0
+#define CONNECTION_LOST_CONNECTION -1
+#define CONNECTION_RECOVERED 1
+#define CONNECTION_MISSING -3
 
 /*
  
