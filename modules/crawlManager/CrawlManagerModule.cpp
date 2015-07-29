@@ -76,11 +76,42 @@ bool CrawlManagerModule::close()
 //==========================================================//
 // CHECK CONNECTIONS
 //==========================================================//
-void CrawlManagerModule::checkConnections()
+int CrawlManagerModule::checkConnections()
 {
-
-
-
+    bool mustTryReconnection = false;
+    bool reconnectionSuccess = false;
+    
+    cout<<"Connection status: "<<endl;
+    for(int i=0;i<nbParts;i++)
+    {
+        cout<<part_names<<"\t\t";
+        if(connected_part[i] == true)
+            cout<<" connected"<<endl;
+        else
+        {
+            cout<<" NOT connected"<<endl;
+            mustTryReconnection = true;
+        }
+    }
+    
+    if(mustTryReconnection==false)
+    {
+        cout<<"+++ All connections are good +++ \n"<<endl;
+        return 1;
+    }
+    else
+    {
+        // we try to reconnect all parts
+    
+    
+    
+    
+    
+    
+    }
+    
+    return 0;
+    
 }
 
 //==========================================================//
@@ -267,17 +298,8 @@ bool CrawlManagerModule::respond(const Bottle& command, Bottle& reply)
 //CT(22-3-2011) change open(Searchable &s) for configure(yarp::os::ResourceFinder &rf)
 bool CrawlManagerModule::configure(yarp::os::ResourceFinder &rf)
 {
-		
-    /* Process all parameters from both command-line and .ini file */
-    /* get the module name which will form the stem of all module port names */
-	moduleName            = rf.check("name", 
-                           Value("CrawlManager"), 
-                           "module name (string)").asString();
-    
-	
-
-    
-    Time::turboBoost();
+    moduleRate=0.0;
+    verbosity_debug=-1;
     
     part_names[0]="left_arm";
     part_names[1]="right_arm";
@@ -286,9 +308,84 @@ bool CrawlManagerModule::configure(yarp::os::ResourceFinder &rf)
     part_names[4]="torso";
     part_names[5]="head";
     
-    STATE = NOT_SET;    
+    STATE = NOT_SET;
     turnAngle=0;
     commandOnTerminal=3;
+    
+		
+    // Process all parameters from both command-line and .ini file
+    // SI: this has been re-written
+    
+    if(rf.check("module"))
+    {
+        Bottle& bot = rf.findGroup("module");
+        
+        moduleName = bot.find("module_name").asString();
+        if(moduleName == "")
+        {
+            printf("%c[1m",ESC);
+            printf("***ERROR*** missing module_name -> setting default\n");
+            printf("%c[0m",ESC);
+            moduleName="crawlManager";
+        }
+        
+        generatorsName = bot.find("generators_name").asString();
+        if(generatorsName == "")
+        {
+            printf("%c[1m",ESC);
+            printf("***ERROR*** missing generators_name -> setting default\n");
+            printf("%c[0m",ESC);
+            generatorsName="crawlGenerator";
+        }
+        
+        moduleRate = bot.find("module_rate").asDouble();
+        if(moduleRate == 0.0)
+        {
+            printf("%c[1m",ESC);
+            printf("***ERROR*** missing moduleRate -> setting default\n");
+            printf("%c[0m",ESC);
+            moduleRate=1.0;
+        }
+        
+        verbosity_debug = bot.find("verbosity").asInt();
+        if(verbosity_debug == -1)
+        {
+            printf("%c[1m",ESC);
+            printf("***ERROR*** missing moduleRate -> setting default\n");
+            printf("%c[0m",ESC);
+            verbosity_debug=2;
+        }
+        
+    }
+    else
+    {
+        printf("%c[1m",ESC);
+        printf("***ERROR*** NO MODEL PARAMETERS \n");
+        printf("%c[0m",ESC);
+        
+        cout<<"Could not find module parameters in configuration file!"<<endl
+            <<"Setting default values"<<endl;
+        
+        moduleName="crawlManager";
+        moduleRate=1.0;
+        verbosity_debug=2;
+        generatorsName="crawlGenerator";
+    }
+    
+
+    cout<<"+++++++++++++++ PARAMS +++++++++++++++++++"<<endl;
+    cout<<"Manager module name   = "<<moduleName<<endl;
+    cout<<"Manager rate          = "<<moduleRate<<endl;
+    cout<<"Generator module name = "<<generatorsName<<endl;
+    cout<<"Verbosity             = "<<verbosity_debug<<endl;
+    cout<<"++++++++++++++++++++++++++++++++++++++++++"<<endl;
+
+    
+    //**** CHECKING CONNECTIONS ****
+    
+    Time::turboBoost();
+    
+
     
     vector<double> crawl_ampl;
     vector<double> crawl_target;
