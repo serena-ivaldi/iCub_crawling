@@ -30,7 +30,7 @@ CrawlGenerator:
 
 ### How to use it
 
-For now, the ports the crawlGenerator connects to are hard-coded in the source. Thus, it would only work with iCub_SIM out of the box but one could change the port names in `generatorThread.cpp` to use the Gazebo simulator or the actual robot.
+For now, the ports the crawlGenerator connects to are hard-coded in the source. Thus, it would only work with iCub_SIM out of the box but one could change the port names in `generatorThread.cpp` to use the Gazebo simulator or the actual robot. Also the application description file `crawling.xml` should be adapted.
 
 How to use it on iCub:
 
@@ -39,7 +39,7 @@ How to use it on iCub:
 3. move to the `crawlGenerator/app` folder
 4. launch the yarp manager with the application description for the crawlGenerator module
     ~~~
-    yarpmanager --application crawling.xml
+    yarpmanager --application yarpmananger/crawling.xml
     ~~~
     One only needs to open the Crawling applicaion (couble-click on it) and launch it by pressing the green button with a play-like shape.
 5. launch crawlManager
