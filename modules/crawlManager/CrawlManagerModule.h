@@ -107,6 +107,9 @@ class CrawlManagerModule : public RFModule
     std::string moduleName;
     std::string robotName;
     
+    //SI: small improvements
+    int commandOnTerminal;
+    
     static const int nbParts = 6; //number of limbs
     int nbDOFs[nbParts]; //nb of dofs for each part
     ConstString part_names[nbParts]; // names of the different parts
@@ -133,6 +136,8 @@ class CrawlManagerModule : public RFModule
     void Crawl(double desiredTurnAngle=0,double omstanceIncrement=0);
     void Reach(Bottle *reachingCommand);
     void HeadControl(double pitchAngle, double yawAngle);
+    
+    void checkConnections();
    
     public:
     
