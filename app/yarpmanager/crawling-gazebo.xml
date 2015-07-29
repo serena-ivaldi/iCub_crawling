@@ -10,37 +10,6 @@
 
     <!-- Required modules -->
     <module>
-        <name>velocityControlDebugged</name>
-        <parameters>--robot icubGazeboSim --part left_arm --period 10</parameters>
-        <node>localhost</node>
-    </module>
-    <module>
-        <name>velocityControlDebugged</name>
-        <parameters>--robot icubGazeboSim --part right_arm --period 10</parameters>
-        <node>localhost</node>
-    </module>
-    <module>
-        <name>velocityControlDebugged</name>
-        <parameters>--robot icubGazeboSim --part left_leg --period 10</parameters>
-        <node>localhost</node>
-    </module>
-    <module>
-        <name>velocityControlDebugged</name>
-        <parameters>--robot icubGazeboSim --part right_leg --period 10</parameters>
-        <node>localhost</node>
-    </module>
-    <module>
-        <name>velocityControlDebugged</name>
-        <parameters>--robot icubGazeboSim --part head --period 10</parameters>
-        <node>localhost</node>
-    </module>
-    <module>
-        <name>velocityControlDebugged</name>
-        <parameters>--robot icubGazeboSim --part torso --period 10</parameters>
-        <node>localhost</node>
-    </module>
-    # crawl generator
-    <module>
         <name>crawlGenerator</name>
         <parameters>--robot icubGazeboSim --part left_arm --file contexts/crawling/left_armConfig.ini</parameters>
         <node>localhost</node>
@@ -73,10 +42,10 @@
 
 
     <!-- Required connections -->
-    <connection>
+    <!-- <connection>
         <from></from>
         <to></to>
         <protocol></protocol>
-    </connection>
+    </connection> -->
 
 </application>

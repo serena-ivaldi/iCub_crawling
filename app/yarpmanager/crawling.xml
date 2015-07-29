@@ -10,37 +10,6 @@
 
     <!-- Required modules -->
     <module>
-        <name>velocityControlDebugged</name>
-        <parameters>--robot icubSim --part left_arm --period 10</parameters>
-        <node>localhost</node>
-    </module>
-    <module>
-        <name>velocityControlDebugged</name>
-        <parameters>--robot icubSim --part right_arm --period 10</parameters>
-        <node>localhost</node>
-    </module>
-    <module>
-        <name>velocityControlDebugged</name>
-        <parameters>--robot icubSim --part left_leg --period 10</parameters>
-        <node>localhost</node>
-    </module>
-    <module>
-        <name>velocityControlDebugged</name>
-        <parameters>--robot icubSim --part right_leg --period 10</parameters>
-        <node>localhost</node>
-    </module>
-    <module>
-        <name>velocityControlDebugged</name>
-        <parameters>--robot icubSim --part head --period 10</parameters>
-        <node>localhost</node>
-    </module>
-    <module>
-        <name>velocityControlDebugged</name>
-        <parameters>--robot icubSim --part torso --period 10</parameters>
-        <node>localhost</node>
-    </module>
-
-    <module>
         <name>crawlGenerator</name>
         <parameters>--part left_arm --file contexts/crawling/left_armConfig.ini</parameters>
         <node>localhost</node>
@@ -71,24 +40,13 @@
         <node>localhost</node>
     </module>
 
-    <!-- <module>
-        <name>wholeBodyTorqueObserver</name>
-        <node>localhost</node>
-    </module>
-
-    <module>
-        <name>gravityCompensator</name>
-        <node>localhost</node>
-    </module> -->
-
-
 
 
     <!-- Required connections -->
-    <connection>
+    <!-- <connection>
         <from></from>
         <to></to>
         <protocol></protocol>
-    </connection>
+    </connection> -->
 
 </application>

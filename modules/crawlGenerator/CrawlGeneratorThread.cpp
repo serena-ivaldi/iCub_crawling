@@ -159,6 +159,24 @@ bool GeneratorThread::sendFastJointCommand()
 	return true;
 }
 
+/// sends the command the position controller
+bool GeneratorThread::sendPositionCommand()
+{
+	if(!checkJointLimits())
+	{
+		return false;
+	}
+
+	for(int i=0;i<nbDOFs;i++)
+	{
+		positionCommand[i] = states[i];
+	}
+
+	pos->positionMove(positionCommand.data());
+
+	return true;
+}
+
 ///read the parameters coming from the manager and update those of the cpgs class
 void GeneratorThread::getParameters()
 {
@@ -400,7 +418,13 @@ void GeneratorThread::run()
 
 	///////WE SEND THE COMMAND TO THE ROBOT//////////
 
-	if(!sendFastJointCommand())
+	// if(!sendFastJointCommand())
+	// {
+	// 	printf("error in joint command, quitting...\n");
+	// 	this->stop();
+	// 	return;
+	// }
+	if(!sendPositionCommand())
 	{
 		printf("error in joint command, quitting...\n");
 		this->stop();
@@ -432,17 +456,17 @@ void GeneratorThread::disconnectPorts()
 
 #if !DEBUG
 
-	sprintf(tmp1,"/%s/vcControl",partName.c_str());
-	sprintf(tmp2,ICUB_PATH"/vc/%s/input",partName.c_str());
-	if(Network::isConnected(tmp1,tmp2))
-		Network::disconnect(tmp1,tmp2);
-	vcControl_port.close();
+	// sprintf(tmp1,"/%s/vcControl",partName.c_str());
+	// sprintf(tmp2,ICUB_PATH"/vc/%s/input",partName.c_str());
+	// if(Network::isConnected(tmp1,tmp2))
+	// 	Network::disconnect(tmp1,tmp2);
+	// vcControl_port.close();
 
-	sprintf(tmp1,"/%s/vcFastCommand",partName.c_str());
-	sprintf(tmp2,ICUB_PATH"/vc/%s/fastCommand",partName.c_str());
-	if(Network::isConnected(tmp1,tmp2))
-		Network::disconnect(tmp1,tmp2);
-	vcFastCommand_port.close();
+	// sprintf(tmp1,"/%s/vcFastCommand",partName.c_str());
+	// sprintf(tmp2,ICUB_PATH"/vc/%s/fastCommand",partName.c_str());
+	// if(Network::isConnected(tmp1,tmp2))
+	// 	Network::disconnect(tmp1,tmp2);
+	// vcFastCommand_port.close();
 
 #endif
 
@@ -499,6 +523,7 @@ void GeneratorThread::threadRelease()
 	disconnectPorts();
 
 #if !DEBUG
+	ddPart->close();
 	delete ddPart;
 #endif
 
@@ -615,6 +640,49 @@ bool GeneratorThread::init(yarp::os::ResourceFinder &rf)//CTmodified: init(Searc
 	////////////////////////////////////////////////////////////////////
 	////////Getting access to the Polydriver of the part////////////////
 	////////////////////////////////////////////////////////////////////
+	// std::string remotePorts;
+    // remotePorts = "/" + robot + "/" + partName;
+	//
+    // std::string localPorts="/crawlGenerator/" + partName + "/client";
+	//
+    // Property robotOptions;
+    // robotOptions.put("device", "remote_controlboard");
+    // robotOptions.put("local", localPorts.c_str());   // local port names
+    // robotOptions.put("remote", remotePorts.c_str()); // where we connect to
+	//
+	// // create a device
+    // PolyDriver robotDriver(robotOptions);
+    // if (!robotDriver.isValid()) {
+    //     yError() << "Device not available. Here are the known devices:";
+    //     yErrpr() << Drivers::factory().toString();
+    //     return false;
+    // }
+	//
+    // IPositionControl *pos;
+    // IEncoders *encs;
+	//
+    // bool ok;
+    // ok = robotDriver.view(pos);
+    // ok = ok && robotDriver.view(encs);
+	//
+    // if (!ok) {
+    //     yError() << "Problems acquiring interfaces (either position control or encoders data)";
+    //     return false;
+    // }
+	//
+    // int nbJoints=0;
+    // pos->getAxes(&nbJoints);
+    // Vector encoders;
+    // Vector command;
+    // Vector tmp;
+    // encoders.resize(nbJoints);
+    // tmp.resize(nbJoints);
+    // command.resize(nbJoints);
+
+	////////////////////////////////////////////////////////////////////
+	////////Getting access to the Polydriver of the part////////////////
+	////////  This old code uses the velocityControl  ////////////////
+	////////////////////////////////////////////////////////////////////
 	Property ddOptions;
 
 	ddOptions.put("robot", robot);
@@ -650,57 +718,80 @@ bool GeneratorThread::init(yarp::os::ResourceFinder &rf)//CTmodified: init(Searc
 		return false;
 	}
 
-	//vel interface
-	// if(!ddPart->view(PartVel))
-	// {
-	// 	printf("Cannot view the velocity interface of %s\n",partName.c_str());
-	// 	return false;
-	// }
-
-	//vel interface
-	if(!ddPart->view(ictrl))
+	// position interface
+	if(!ddPart->view(pos))
 	{
-		printf("Cannot view the control interface of %s\n",partName.c_str());
+		yError() << "Cannot view the position interface of " << partName;
 		return false;
 	}
+
+
+	// Initialise the control with referance accelerations and speeds
+
+	int nbJoints=0;
+    pos->getAxes(&nbJoints);
+    Vector tmp;
+    tmp.resize(nbJoints);
+
+    int i;
+    for (i = 0; i < nbJoints; i++) {
+         tmp[i] = 50.0;
+    }
+    pos->setRefAccelerations(tmp.data());
+
+    for (i = 0; i < nbJoints; i++) {
+        tmp[i] = 10.0;
+        pos->setRefSpeed(i, tmp[i]);
+    }
+
+	// Initialise the position command to the current positions
+
+	positionCommand.resize(nbJoints);
+
+	yDebug() << "waiting for encoders";
+    while(!PartEncoders->getEncoders(positionCommand.data()))
+    {
+        Time::delay(0.1);
+        yDebug() << ".";
+    }
 
 	///////////////////////////////////////////////////////////////////////
 	////////Connection to the velocity control module//////////////////////
 	///////////////////////////////////////////////////////////////////////
 
-	///normal connection
-	sprintf(tmp1,"/%s/vcControl",partName.c_str());
-	if(!vcControl_port.open(tmp1))
-	{
-		printf("Cannot open vcControl port of %s\n",partName.c_str());
-		return false;
-	}
-
-	sprintf(tmp2,ICUB_PATH"/vc/%s/input",partName.c_str());
-
-	if(!Network::connect(tmp1,tmp2))
-	{
-		printf("Cannot connect to vc/input port of %s\n",partName.c_str());
-		return false;
-	}
-
-	///connection to the thread
-
-	sprintf(tmp1,"/%s/vcFastCommand",partName.c_str());
-
-	if(!vcFastCommand_port.open(tmp1))
-	{
-		printf("Cannot open vcFastCommand port of %s\n",partName.c_str());
-		return false;
-	}
-
-	sprintf(tmp2,ICUB_PATH"/vc/%s/fastCommand",partName.c_str());
-
-	if(!Network::connect(tmp1,tmp2,"udp"))
-	{
-		printf("Cannot connect to vc/fastCommand port of %s\n",partName.c_str());
-		return false;
-	}
+	// ///normal connection
+	// sprintf(tmp1,"/%s/vcControl",partName.c_str());
+	// if(!vcControl_port.open(tmp1))
+	// {
+	// 	printf("Cannot open vcControl port of %s\n",partName.c_str());
+	// 	return false;
+	// }
+	//
+	// sprintf(tmp2,ICUB_PATH"/vc/%s/input",partName.c_str());
+	//
+	// if(!Network::connect(tmp1,tmp2))
+	// {
+	// 	printf("Cannot connect to vc/input port of %s\n",partName.c_str());
+	// 	return false;
+	// }
+	//
+	// ///connection to the thread
+	//
+	// sprintf(tmp1,"/%s/vcFastCommand",partName.c_str());
+	//
+	// if(!vcFastCommand_port.open(tmp1))
+	// {
+	// 	printf("Cannot open vcFastCommand port of %s\n",partName.c_str());
+	// 	return false;
+	// }
+	//
+	// sprintf(tmp2,ICUB_PATH"/vc/%s/fastCommand",partName.c_str());
+	//
+	// if(!Network::connect(tmp1,tmp2,"udp"))
+	// {
+	// 	printf("Cannot connect to vc/fastCommand port of %s\n",partName.c_str());
+	// 	return false;
+	// }
 
 #endif
 
@@ -892,90 +983,90 @@ bool GeneratorThread::init(yarp::os::ResourceFinder &rf)//CTmodified: init(Searc
 
 #if !DEBUG
 	/* Add run command on each joint to start the velocity controller */
-	for(int i=0;i<nbDOFs;i++)
-			{
-				//double vel = mv.get(i+1).asDouble();
-
-				Bottle& cmd = vcControl_port.prepare();
-
-				cmd.clear();
-				cmd.addVocab(Vocab::encode("run"));
-
-				cmd.addInt(jointMapping[i]);
-
-				cmd.addString("run");
-
-				vcControl_port.write(true);
-
-				Time::delay(0.1);
-			}
-
-
-	//reading the max velocity in conf file
-	if(options.check("maxVelocity"))
-	{
-		Bottle& mv = options.findGroup("maxVelocity");
-
-		if(mv.size()!=nbDOFs+1)
-			printf("wrong number of max velocity\n");
-		else
-		{
-			for(int i=0;i<nbDOFs;i++)
-			{
-				double vel = mv.get(i+1).asDouble();
-
-				Bottle& cmd = vcControl_port.prepare();
-
-				cmd.clear();
-				cmd.addVocab(Vocab::encode("svel"));
-
-				cmd.addInt(jointMapping[i]);
-
-				cmd.addDouble(vel);
-
-				vcControl_port.write(true);
-
-				Time::delay(0.1);
-			}
-		}
-	}
-	else
-		printf("no max velocity defined, using default\n");
-
-
+	// for(int i=0;i<nbDOFs;i++)
+	// 		{
+	// 			//double vel = mv.get(i+1).asDouble();
+	//
+	// 			Bottle& cmd = vcControl_port.prepare();
+	//
+	// 			cmd.clear();
+	// 			cmd.addVocab(Vocab::encode("run"));
+	//
+	// 			cmd.addInt(jointMapping[i]);
+	//
+	// 			cmd.addString("run");
+	//
+	// 			vcControl_port.write(true);
+	//
+	// 			Time::delay(0.1);
+	// 		}
+	//
+	//
+	// //reading the max velocity in conf file
+	// if(options.check("maxVelocity"))
+	// {
+	// 	Bottle& mv = options.findGroup("maxVelocity");
+	//
+	// 	if(mv.size()!=nbDOFs+1)
+	// 		printf("wrong number of max velocity\n");
+	// 	else
+	// 	{
+	// 		for(int i=0;i<nbDOFs;i++)
+	// 		{
+	// 			double vel = mv.get(i+1).asDouble();
+	//
+	// 			Bottle& cmd = vcControl_port.prepare();
+	//
+	// 			cmd.clear();
+	// 			cmd.addVocab(Vocab::encode("svel"));
+	//
+	// 			cmd.addInt(jointMapping[i]);
+	//
+	// 			cmd.addDouble(vel);
+	//
+	// 			vcControl_port.write(true);
+	//
+	// 			Time::delay(0.1);
+	// 		}
+	// 	}
+	// }
+	// else
+	// 	printf("no max velocity defined, using default\n");
 
 
-	///reading the Kp gains in the conf file
-	if(options.check("controlGains"))
-	{
-		Bottle& botG = options.findGroup("controlGains");
 
-		if(botG.size()!=nbDOFs+1)
-			printf("wrong number of gains\n");
-		else
-		{
-			for(int i=0;i<nbDOFs;i++)
-			{
-				double gain = botG.get(i+1).asDouble();
-
-				Bottle& cmd = vcControl_port.prepare();
-
-				cmd.clear();
-
-				cmd.addVocab(Vocab::encode("gain"));
-
-				cmd.addInt(jointMapping[i]);
-
-				cmd.addDouble(gain);
-
-				vcControl_port.write(true);
-
-				Time::delay(0.1);
-			}
-		}
-	}
-	else
-		printf("no gains defined, using 0\n");
+	//
+	// ///reading the Kp gains in the conf file
+	// if(options.check("controlGains"))
+	// {
+	// 	Bottle& botG = options.findGroup("controlGains");
+	//
+	// 	if(botG.size()!=nbDOFs+1)
+	// 		printf("wrong number of gains\n");
+	// 	else
+	// 	{
+	// 		for(int i=0;i<nbDOFs;i++)
+	// 		{
+	// 			double gain = botG.get(i+1).asDouble();
+	//
+	// 			Bottle& cmd = vcControl_port.prepare();
+	//
+	// 			cmd.clear();
+	//
+	// 			cmd.addVocab(Vocab::encode("gain"));
+	//
+	// 			cmd.addInt(jointMapping[i]);
+	//
+	// 			cmd.addDouble(gain);
+	//
+	// 			vcControl_port.write(true);
+	//
+	// 			Time::delay(0.1);
+	// 		}
+	// 	}
+	// }
+	// else
+	// 	printf("no gains defined, using 0\n");
 
 #endif
 
