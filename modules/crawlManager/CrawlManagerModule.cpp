@@ -79,12 +79,12 @@ bool CrawlManagerModule::close()
 int CrawlManagerModule::checkConnections()
 {
     bool mustTryReconnection = false;
-    bool reconnectionSuccess = false;
+    int returnStatus=CONNECTION_ALL_GOOD;
     
-    cout<<"Connection status: "<<endl;
+    cout<<"+++ Connection status +++ "<<endl;
     for(int i=0;i<nbParts;i++)
     {
-        cout<<part_names<<"\t\t";
+        cout<<part_names[i]<<"   ";
         if(connected_part[i] == true)
             cout<<" connected"<<endl;
         else
@@ -94,23 +94,96 @@ int CrawlManagerModule::checkConnections()
         }
     }
     
-    if(mustTryReconnection==false)
+
+    // we try to reconnect to all the ports of the crawl Generators
+    cout<<"+++ Checking connections +++ \n"<<endl;
+    
+    for(int i=0;i<nbParts;i++)
     {
-        cout<<"+++ All connections are good +++ \n"<<endl;
-        return 1;
+        char tmp1[255],tmp2[255];
+        sprintf(tmp1,"/%s/%s/parameters/in",generatorsName.c_str(),part_names[i].c_str());
+            
+        /////////////////////////////////////////////////////
+        // check if the part is active and connect///////////
+        /////////////////////////////////////////////////////
+        Contact query = Network::queryName(tmp1);
+            
+        if((connected_part[i] == true)&&(query.isValid()))
+        {
+            //was connected before (connected==true) and is still alive
+            cout<<"[OK] ["<<part_names[i]<<"] is connected and still alive   "<<endl;
+        }
+        else if((connected_part[i] == true)&&(!query.isValid()))
+        {
+            // was connected before but query says the port is dead
+            cout<<"[NO] ["<<part_names[i]<<"]  is no longer alive!! "<<endl;
+            connected_part[i] = false;
+            returnStatus=CONNECTION_LOST_CONNECTION;
+        }
+        else
+        {
+            //it was not connected before..
+                
+            if(query.isValid())
+            {
+                //the generator is alive! horray!!!
+                
+                cout<<"[  ] ["<<part_names[i]<<"] attempting connection with the generator ..."<<endl;
+                cout << "     ... found the generator on port: " << tmp1 << endl;
+                
+                sprintf(tmp2,"/%s/%s/out",moduleName.c_str(),part_names[i].c_str());
+                cout << "     ... creating local port: " << tmp2 << endl;
+                
+                bool ok = parts_port[i].open(tmp2);
+                if(!ok)
+                {
+                    printf("    ... unable to open a port %s   [ERROR] \n",tmp2);
+                    return CONNECTION_PORT_ERROR;
+                }
+                
+                cout << "     ... connecting " << tmp2 << " with "<<tmp1<<endl;
+                ok = Network::connect(tmp2,tmp1);
+                if(!ok)
+                {
+                    printf("    ... unable to connect %s with %s     [ERROR] \n",tmp2,tmp1);
+                    return CONNECTION_PORT_ERROR;
+                }
+                
+                sprintf(tmp1, "/%s/%s/status/in", moduleName.c_str(),part_names[i].c_str());
+                sprintf(tmp2, "/%s/status_for_manager/out", part_names[i].c_str());
+                
+                cout << "     ... creating local port: " << tmp1 << endl;
+                ok = check_port[i].open(tmp1);
+                if(!ok)
+                {
+                    printf("    ... unable to open %s\n",tmp1);
+                    return CONNECTION_PORT_ERROR;
+                }
+                
+                cout << "     ... connecting " << tmp2 << " with "<<tmp1<<endl;
+                ok = Network::connect(tmp2,tmp1);
+                if(!ok)
+                {
+                    printf("    ... unable to connect %s with %s \n",tmp2,tmp1);
+                    return CONNECTION_PORT_ERROR;
+                }
+                
+                connected_part[i] = true;
+                cout<<"[OK] ["<<part_names[i]<<"] is now connected to the generator!   "<<endl;
+                
+            }
+            else
+            {
+                //the generator is not alive... booooo
+                // nothing changes
+                cout<<"[NO] ["<<part_names[i]<<"] is not running - please start its generator! "<<endl;
+                returnStatus=CONNECTION_MISSING;
+            }
+            
+        }
     }
-    else
-    {
-        // we try to reconnect all parts
     
-    
-    
-    
-    
-    
-    }
-    
-    return 0;
+    return returnStatus;
     
 }
 
@@ -270,8 +343,11 @@ bool CrawlManagerModule::respond(const Bottle& command, Bottle& reply)
             
         case 8: //SI: check connections (to reconnect in case)
             
-            reply.addString("checking connections and reconnecting if necessary...");
-            checkConnections();
+            if(checkConnections()==CONNECTION_ALL_GOOD)
+                reply.addString("all connections with generators are good");
+            else
+                reply.addString("unable to connect to some generators, error");
+            
             break;
             
             
@@ -298,6 +374,8 @@ bool CrawlManagerModule::respond(const Bottle& command, Bottle& reply)
 //CT(22-3-2011) change open(Searchable &s) for configure(yarp::os::ResourceFinder &rf)
 bool CrawlManagerModule::configure(yarp::os::ResourceFinder &rf)
 {
+    Time::turboBoost();
+    
     moduleRate=0.0;
     verbosity_debug=-1;
     
@@ -311,6 +389,11 @@ bool CrawlManagerModule::configure(yarp::os::ResourceFinder &rf)
     STATE = NOT_SET;
     turnAngle=0;
     commandOnTerminal=3;
+    
+    vector<double> crawl_ampl;
+    vector<double> crawl_target;
+    vector<double> init_ampl;
+    vector<double> init_target;
     
 		
     // Process all parameters from both command-line and .ini file
@@ -380,23 +463,17 @@ bool CrawlManagerModule::configure(yarp::os::ResourceFinder &rf)
     cout<<"Verbosity             = "<<verbosity_debug<<endl;
     cout<<"++++++++++++++++++++++++++++++++++++++++++"<<endl;
 
-    
+
+
     //**** CHECKING CONNECTIONS ****
     
-    Time::turboBoost();
-    
 
-    
-    vector<double> crawl_ampl;
-    vector<double> crawl_target;
-    vector<double> init_ampl;
-    vector<double> init_target;
 
     //we connect to the ports of the crawl Generators
     for(int i=0;i<nbParts;i++)
     {
         char tmp1[255],tmp2[255];
-        sprintf(tmp1,"/%s/parameters/in",part_names[i].c_str());
+        sprintf(tmp1,"/%s/%s/parameters/in",generatorsName.c_str(),part_names[i].c_str());
 
         /////////////////////////////////////////////////////
         // check if the part is active and connect///////////
@@ -405,7 +482,7 @@ bool CrawlManagerModule::configure(yarp::os::ResourceFinder &rf)
         if(query.isValid())
         {
             cout << "found part " << tmp1 << " ... connecting" << endl;
-            sprintf(tmp2,"/manager/%s/out",part_names[i].c_str());
+            sprintf(tmp2,"/%s/%s/out",moduleName.c_str(),part_names[i].c_str());
             bool ok = parts_port[i].open(tmp2);
             if(!ok)
             {
@@ -421,7 +498,7 @@ bool CrawlManagerModule::configure(yarp::os::ResourceFinder &rf)
                     
             connected_part[i] = true; //the part i is connected
             
-            sprintf(tmp1, "/manager/%s/status/in", part_names[i].c_str());
+            sprintf(tmp1, "/%s/%s/status/in", moduleName.c_str(),part_names[i].c_str());
             sprintf(tmp2, "/%s/status_for_manager/out", part_names[i].c_str());
             ok = check_port[i].open(tmp1);
             if(!ok)
@@ -444,6 +521,8 @@ bool CrawlManagerModule::configure(yarp::os::ResourceFinder &rf)
 			printf("%c[0m",ESC); 
 		}
 			  
+        
+        //**** GETTING PARAMETERS FOR THE GENERATORS ****
             
         ///////we get the parameters from the config files
         //CTmodified: if(options.check(part_names[i].c_str()))
@@ -593,7 +672,6 @@ bool CrawlManagerModule::configure(yarp::os::ResourceFinder &rf)
     }*/
 	//=========END added by Seb=========
 
-    verbosity_debug=2; //SI: for the moment, then it must be read from file (TODO)
       
     return true;
 
