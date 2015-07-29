@@ -103,12 +103,11 @@ class CrawlManagerModule : public RFModule
     int verbosity_debug; //verbosity level for the debug messages
                          // 0=no debug 1=some prints but not in cycles 2=all prints
     
-    //CT(22-3-2011): all the parameters from the ini file:
-    std::string moduleName;
-    std::string robotName;
+    std::string moduleName;     //for connecting ports
+    std::string generatorsName; //for connecting ports
+    double moduleRate; //refresh for the updateModule()
     
-    //SI: small improvements
-    int commandOnTerminal;
+    int commandOnTerminal; //control the output on terminal
     
     static const int nbParts = 6; //number of limbs
     int nbDOFs[nbParts]; //nb of dofs for each part
@@ -137,7 +136,7 @@ class CrawlManagerModule : public RFModule
     void Reach(Bottle *reachingCommand);
     void HeadControl(double pitchAngle, double yawAngle);
     
-    void checkConnections();
+    int checkConnections();
    
     public:
     
