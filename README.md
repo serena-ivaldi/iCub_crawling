@@ -55,9 +55,16 @@ The terminal is used to choose the appropriate action to do:
 9. stop (also closes the manager module)
 
 
+## Gazebo
+- launch yarpserver
+- lauch Gazebo
+- cd app
+- yarpmanager --application yarpmananger/
+
+
 ### Compiling and installation
 
-Crawl Manager can be installed using CMake
+For the three modules:
 
 ~~~shell
 cd iCub_crawling/modules/crawlManager
@@ -83,4 +90,3 @@ cd build
 ccmake ..
 make
 ~~~
-
