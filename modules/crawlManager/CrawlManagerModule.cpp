@@ -19,16 +19,29 @@ bool CrawlManagerModule::updateModule()
         return false;
 
     //SI: long term: this will be replaced by a GUI (TODO)
-    cout << "**********************************"<<endl;
-    cout << "Please specify the task" << endl;
-    cout << "(1) Go to init pos" << endl;
-    cout << "(2) Crawl" << endl;
-    cout << "(3) Faster" << endl;
-    cout << "(4) Slower" << endl;
-    cout << "(5) Turn right" << endl;
-    cout << "(6) Turn left" << endl;
-    cout << "(9) Stop" << endl;
-    cout << "**********************************"<<endl;
+    
+    if(commandOnTerminal==3)
+    {
+        cout<<"\n\n";
+        cout << "**********************************"<<endl;
+        cout << "              MENU                "<<endl;
+        cout << "**********************************"<<endl;
+        cout << "Please specify the task" << endl;
+        cout << "(1) Go to init pos" << endl;
+        cout << "(2) Crawl" << endl;
+        cout << "(3) Faster" << endl;
+        cout << "(4) Slower" << endl;
+        cout << "(5) Turn right" << endl;
+        cout << "(6) Turn left" << endl;
+        cout << "(8) Check connections"<<endl;
+        cout << "(9) Stop" << endl;
+        cout << "(0) Toggle verbosity"<<endl;
+        cout << "**********************************"<<endl;
+        
+        cout<<"type command on keyboard ==> "<< endl;
+        
+        commandOnTerminal=0;
+    }
     
     return true;
 }
@@ -59,6 +72,16 @@ bool CrawlManagerModule::close()
     return true;
 }
 
+
+//==========================================================//
+// CHECK CONNECTIONS
+//==========================================================//
+void CrawlManagerModule::checkConnections()
+{
+
+
+
+}
 
 //==========================================================//
 //  RESPOND
@@ -213,11 +236,22 @@ bool CrawlManagerModule::respond(const Bottle& command, Bottle& reply)
             crawl_left_parameters[9][1]=0.0; //???? SI: not safe, to be changed (TODO)
             
             break;
-
+            
+        case 8: //SI: check connections (to reconnect in case)
+            
+            reply.addString("checking connections and reconnecting if necessary...");
+            checkConnections();
+            break;
+            
+            
         default:
+            
+            reply.addString("Command unknown");
             break;
             
         }
+    
+    commandOnTerminal++;
         
     return true;
        
@@ -228,7 +262,7 @@ bool CrawlManagerModule::respond(const Bottle& command, Bottle& reply)
 
 
 //==========================================================//
-//  RESPOND
+//  CONFIGURE
 //==========================================================//
 //CT(22-3-2011) change open(Searchable &s) for configure(yarp::os::ResourceFinder &rf)
 bool CrawlManagerModule::configure(yarp::os::ResourceFinder &rf)
@@ -254,6 +288,7 @@ bool CrawlManagerModule::configure(yarp::os::ResourceFinder &rf)
     
     STATE = NOT_SET;    
     turnAngle=0;
+    commandOnTerminal=3;
     
     vector<double> crawl_ampl;
     vector<double> crawl_target;
@@ -452,7 +487,7 @@ bool CrawlManagerModule::configure(yarp::os::ResourceFinder &rf)
 	//=========START added by Seb=========
 	commandPort.open(COMMAND_PORT_NAME);
 		attachTerminal();
-	printf("Attcahing CommandPort to the terminal");
+	printf("Attaching CommandPort to the terminal");
 
 	//the constructor of bufferedport is already doing the attach right?? How can I change the !attach question to veryfy this??
     /*if(!(attach(commandPort,true)))
