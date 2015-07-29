@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <string>
 
+
+#define ICUB_PATH "/icubGazeboSim"
 #define DEBUG 0
 
 #define SGN(a) (a<0 ? -1 : 1)
@@ -431,13 +433,13 @@ void GeneratorThread::disconnectPorts()
 #if !DEBUG
 
 	sprintf(tmp1,"/%s/vcControl",partName.c_str());
-	sprintf(tmp2,"/icubSim/vc/%s/input",partName.c_str());
+	sprintf(tmp2,ICUB_PATH"/vc/%s/input",partName.c_str());
 	if(Network::isConnected(tmp1,tmp2))
 		Network::disconnect(tmp1,tmp2);
 	vcControl_port.close();
 
 	sprintf(tmp1,"/%s/vcFastCommand",partName.c_str());
-	sprintf(tmp2,"/icubSim/vc/%s/fastCommand",partName.c_str());
+	sprintf(tmp2,ICUB_PATH"/vc/%s/fastCommand",partName.c_str());
 	if(Network::isConnected(tmp1,tmp2))
 		Network::disconnect(tmp1,tmp2);
 	vcFastCommand_port.close();
@@ -626,7 +628,7 @@ bool GeneratorThread::init(yarp::os::ResourceFinder &rf)//CTmodified: init(Searc
 	ddOptions.put("device","remote_controlboard");
 
 	sprintf(tmp1,"/%s/enc",partName.c_str());
-	sprintf(tmp2,"/icubSim/%s",partName.c_str());
+	sprintf(tmp2,ICUB_PATH"/%s",partName.c_str());
 
 	ddOptions.put("local",tmp1);
 	ddOptions.put("remote",tmp2);
@@ -681,7 +683,7 @@ bool GeneratorThread::init(yarp::os::ResourceFinder &rf)//CTmodified: init(Searc
 		return false;
 	}
 
-	sprintf(tmp2,"/icubSim/vc/%s/input",partName.c_str());
+	sprintf(tmp2,ICUB_PATH"/vc/%s/input",partName.c_str());
 
 	if(!Network::connect(tmp1,tmp2))
 	{
@@ -699,7 +701,7 @@ bool GeneratorThread::init(yarp::os::ResourceFinder &rf)//CTmodified: init(Searc
 		return false;
 	}
 
-	sprintf(tmp2,"/icubSim/vc/%s/fastCommand",partName.c_str());
+	sprintf(tmp2,ICUB_PATH"/vc/%s/fastCommand",partName.c_str());
 
 	if(!Network::connect(tmp1,tmp2,"udp"))
 	{
@@ -1238,5 +1240,3 @@ bool GeneratorThread::init(yarp::os::ResourceFinder &rf)//CTmodified: init(Searc
 
 	return true;
 }
-
-
