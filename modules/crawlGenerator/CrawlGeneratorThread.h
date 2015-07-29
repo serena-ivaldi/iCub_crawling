@@ -155,11 +155,12 @@ class GeneratorThread : public yarp::os::RateThread
     Cpgs *myCpg; /**< The CPG of the controlled part */
     PolyDriver *ddPart; /**< The Polydriver of the controlled part */
     IEncoders *PartEncoders; /**< Missing Description */
+    /** pointer to an object used to control joints in position mode **/
+    IPositionControl *pos;
     IKManager *myIK;/**< Missing Description */
     ITorqueControl *PartTorques;
-    //IVelocityControl *partVel; //SI
-    IControlMode2 *ictrl; // interface used to switch the  control mode for the actuators
 
+    Vector positionCommand;
 
     BufferedPort<Bottle> vcControl_port; /**< Port of the velocity controller */
     BufferedPort<Bottle> vcFastCommand_port; /**< The velocity controller FastCommand port. MISSING */
@@ -189,15 +190,15 @@ class GeneratorThread : public yarp::os::RateThread
 	ConstString robot;/**< Name of the robot (ex : iCub, iCubSim...) */
 
 
-	private:
+private:
 
-	 /**
-    * Sends commands to the velocity controller.
-    * Sends the joint mappings and the states of the system.
-    * @return true.
-    * @see run()
+    /**
+    * Sends a position command to the robot.
+    * it is built from the states of the system for the controlled joints and
+    * of the initial position for the others.
+    * @return false if we are out of joint limits
     */
-    bool sendFastJointCommand();
+    bool sendPositionCommand();
 
     /**
     * Checks that the joint limits have not been exceeded.
