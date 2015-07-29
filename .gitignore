@@ -22,7 +22,7 @@
 *.app
 
 # Build products
-/build*/
+build*/
 
 # Linux temp files
 *~
