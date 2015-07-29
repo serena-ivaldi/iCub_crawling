@@ -2,8 +2,6 @@
 
 This is the repo for new code for the iCub crawling. The code is under development :)
 
-
-
 ## Porting the old modules
 
 ### Overview of the modules
@@ -16,21 +14,34 @@ CrawlManager:
 - reads parameters from a configuration file `crawling_managerConfig.ini` which is currently in `icub_crawling/app/contexts/crawling/`
 - when launched, it is expecting the generators (x6, one for each limb) to be already running and connected to the robot. if they are not running, it gives a warning but the module starts
 
+CrawlGenerator:
+
+- lower level module generating the motion patterns, using parameters given by the CrawlManager module
+- this class is instanciated once for each robot part :
+    - the two arms
+    - the two legs
+    - the head
+    - the torso
+    each instance needs a parameter file describing the limb to be controlled
+- through connexions to other instances of this class, it couples the motion of the body parts_port
+- the actual velocity control of  the actuators is delegated to the velocityControl module to which it sends the desired velocities
+- one instance of CrawlGenerator needs a corresponding one of velocityControl
+
 
 ### How to use it
+
+For now, the ports the crawlGenerator connects to are hard-coded in the source. Thus, it would only work with iCub_SIM out of the box but one could change the port names in `generatorThread.cpp` to use the Gazebo simulator or the actual robot.
 
 How to use it on iCub:
 
 1. launch wholeBodyTorqueObserver
 2. launch gravityComp
-3. launch the velocity control module for each limb
+3. move to the `crawlGenerator/app` folder
+4. launch the yarp manager with the application description for the crawlGenerator module
     ~~~
-    velocityControl --robot icub --part head --period 10
+    yarpmanager --application crawling.xml
     ~~~
-4. launch crawlGenerator (x6) .. one for each limb! (RA, LA, RL, LL, TO, HE) using a command like
-    ~~~
-    ./crawlGenerator --part head --file ../app/contexts/crawling/left_legConfig.ini
-    ~~~
+    One only needs to open the Crawling applicaion (couble-click on it) and launch it by pressing the green button with a play-like shape.
 5. launch crawlManager
 
 The terminal is used to choose the appropriate action to do:
@@ -44,7 +55,7 @@ The terminal is used to choose the appropriate action to do:
 9. stop (also closes the manager module)
 
 
-### Installation
+### Compiling and installation
 
 Crawl Manager can be installed using CMake
 
@@ -63,5 +74,13 @@ export crawling_app=PATH_WHERE_YOU_PUT_THE_CRAWLING_PROJECT/iCub_crawling/app/
 export YARP_DATA_DIRS=$YARP_DATA_DIRS:$crawling_app
 ~~~
 
+Then, the crawlGenerator module can be compiled using the came process :
 
+~~~shell
+cd iCub_crawling/modules/crawlGenerator
+mkdir build
+cd build
+ccmake ..
+make
+~~~
 
