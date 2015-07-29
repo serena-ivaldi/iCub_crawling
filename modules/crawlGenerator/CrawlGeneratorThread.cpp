@@ -496,13 +496,6 @@ void GeneratorThread::threadRelease()
 
 #endif
 
-
-	for (int i=0; i<nbDOFs; i++)
-	{
-		// set the control mode to velocity
-		ictrl->setControlMode(jointMapping[i], VOCAB_CM_POSITION);
-	}
-
 	disconnectPorts();
 
 #if !DEBUG
@@ -895,15 +888,6 @@ bool GeneratorThread::init(yarp::os::ResourceFinder &rf)//CTmodified: init(Searc
 	{
 		printf("Please specify the joint mapping of part%s\n",partName.c_str());
 		return false;
-	}
-
-	// FIXME: this code is isolated from its siblings, it makes the program
-	// harder to read
-	for (int i=0; i<nbDOFs; i++)
-	{
-		// set the control mode to velocity
-		yDebug() << "Setting velocity mode for joint" << jointMapping[i];
-		ictrl->setControlMode(jointMapping[i], VOCAB_CM_VELOCITY);
 	}
 
 #if !DEBUG
