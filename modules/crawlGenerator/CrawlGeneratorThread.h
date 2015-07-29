@@ -190,15 +190,7 @@ class GeneratorThread : public yarp::os::RateThread
 	ConstString robot;/**< Name of the robot (ex : iCub, iCubSim...) */
 
 
-	private:
-
-	 /**
-    * Sends commands to the velocity controller.
-    * Sends the joint mappings and the states of the system.
-    * @return true.
-    * @see run()
-    */
-    bool sendFastJointCommand();
+private:
 
     /**
     * Sends a position command to the robot.

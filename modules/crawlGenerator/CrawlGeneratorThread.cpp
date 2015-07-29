@@ -135,30 +135,6 @@ bool GeneratorThread::getTorque()
 	return true;
 }
 
-/// sends the command the velocity controllers
-bool GeneratorThread::sendFastJointCommand()
-{
-	if(!checkJointLimits())
-	{
-		return false;
-	}
-	Bottle& cmd = vcFastCommand_port.prepare();
-
-	cmd.clear();
-
-	for(int i=0;i<nbDOFs;i++)
-	{
-		cmd.addInt(jointMapping[i]);
-		cmd.addDouble(states[i]);
-		cmd.addInt(jointMapping[i] + VELOCITY_INDEX_OFFSET);
-		cmd.addDouble(dstates[i]);
-	}
-
-	vcFastCommand_port.write(true);
-
-	return true;
-}
-
 /// sends the command the position controller
 bool GeneratorThread::sendPositionCommand()
 {
@@ -414,24 +390,13 @@ void GeneratorThread::run()
 	fprintf(target_file,"\n");
 	fflush(target_file);
 
-#if !DEBUG
-
-	///////WE SEND THE COMMAND TO THE ROBOT//////////
-
-	// if(!sendFastJointCommand())
-	// {
-	// 	printf("error in joint command, quitting...\n");
-	// 	this->stop();
-	// 	return;
-	// }
+	// Send the motion command to the robot
 	if(!sendPositionCommand())
 	{
 		printf("error in joint command, quitting...\n");
 		this->stop();
 		return;
 	}
-	/////////////////////////////////////////////////
-#endif
 
 	//we print the loop time
 	double timef=Time::now();
@@ -453,22 +418,6 @@ bool GeneratorThread::threadInit()
 void GeneratorThread::disconnectPorts()
 {
 	char tmp1[255],tmp2[255];
-
-#if !DEBUG
-
-	// sprintf(tmp1,"/%s/vcControl",partName.c_str());
-	// sprintf(tmp2,ICUB_PATH"/vc/%s/input",partName.c_str());
-	// if(Network::isConnected(tmp1,tmp2))
-	// 	Network::disconnect(tmp1,tmp2);
-	// vcControl_port.close();
-
-	// sprintf(tmp1,"/%s/vcFastCommand",partName.c_str());
-	// sprintf(tmp2,ICUB_PATH"/vc/%s/fastCommand",partName.c_str());
-	// if(Network::isConnected(tmp1,tmp2))
-	// 	Network::disconnect(tmp1,tmp2);
-	// vcFastCommand_port.close();
-
-#endif
 
 	if(myCpg->feedbackable)
 	{
@@ -498,31 +447,11 @@ void GeneratorThread::disconnectPorts()
 void GeneratorThread::threadRelease()
 {
 	fprintf(stderr, "%s thread releasing\n", partName.c_str());
-	//we stop the vcControl
-
-#if !DEBUG
-
-	//setting gains to 0
-
-	for(int i=0;i<nbDOFs;i++)
-	{
-		Bottle& cmd = vcControl_port.prepare();
-		cmd.clear();
-		cmd.addVocab(Vocab::encode("gain"));
-		cmd.addInt(jointMapping[i]);
-		cmd.addDouble(0.0);
-
-		vcControl_port.write(true);
-
-		Time::delay(0.1);
-	}
-
-
-#endif
 
 	disconnectPorts();
 
 #if !DEBUG
+	// close the connexion to the robot controller
 	ddPart->close();
 	delete ddPart;
 #endif
@@ -594,7 +523,7 @@ bool GeneratorThread::init(yarp::os::ResourceFinder &rf)//CTmodified: init(Searc
 	}
 	else
 	{
-    const char *cubPath;
+    	const char *cubPath;
 		cubPath = yarp::os::getenv("ICUB_ROOT"); //previously set to ICUB_DIR
 		if(cubPath == NULL) {
 			printf("GeneratorThread::init>> ERROR getting the environment variable ICUB_DIR, exiting\n");
@@ -602,7 +531,7 @@ bool GeneratorThread::init(yarp::os::ResourceFinder &rf)//CTmodified: init(Searc
 		}
 		std::string cubPathStr(cubPath);
 		//CTModified: options.fromConfigFile((cubPathStr + "/app/crawlingApplication/conf/" + partName + "Config.ini").c_str());
-    options.fromConfigFile((rf.getContextPath().c_str() + (std::string) "/" + partName + "Config.ini").c_str());
+    	options.fromConfigFile((rf.getContextPath().c_str() + (std::string) "/" + partName + "Config.ini").c_str());
 	}
 
 	if(options.check("robot"))
@@ -637,51 +566,9 @@ bool GeneratorThread::init(yarp::os::ResourceFinder &rf)//CTmodified: init(Searc
 
 
 #if !DEBUG
-	////////////////////////////////////////////////////////////////////
-	////////Getting access to the Polydriver of the part////////////////
-	////////////////////////////////////////////////////////////////////
-	// std::string remotePorts;
-    // remotePorts = "/" + robot + "/" + partName;
-	//
-    // std::string localPorts="/crawlGenerator/" + partName + "/client";
-	//
-    // Property robotOptions;
-    // robotOptions.put("device", "remote_controlboard");
-    // robotOptions.put("local", localPorts.c_str());   // local port names
-    // robotOptions.put("remote", remotePorts.c_str()); // where we connect to
-	//
-	// // create a device
-    // PolyDriver robotDriver(robotOptions);
-    // if (!robotDriver.isValid()) {
-    //     yError() << "Device not available. Here are the known devices:";
-    //     yErrpr() << Drivers::factory().toString();
-    //     return false;
-    // }
-	//
-    // IPositionControl *pos;
-    // IEncoders *encs;
-	//
-    // bool ok;
-    // ok = robotDriver.view(pos);
-    // ok = ok && robotDriver.view(encs);
-	//
-    // if (!ok) {
-    //     yError() << "Problems acquiring interfaces (either position control or encoders data)";
-    //     return false;
-    // }
-	//
-    // int nbJoints=0;
-    // pos->getAxes(&nbJoints);
-    // Vector encoders;
-    // Vector command;
-    // Vector tmp;
-    // encoders.resize(nbJoints);
-    // tmp.resize(nbJoints);
-    // command.resize(nbJoints);
 
 	////////////////////////////////////////////////////////////////////
 	////////Getting access to the Polydriver of the part////////////////
-	////////  This old code uses the velocityControl  ////////////////
 	////////////////////////////////////////////////////////////////////
 	Property ddOptions;
 
@@ -754,44 +641,6 @@ bool GeneratorThread::init(yarp::os::ResourceFinder &rf)//CTmodified: init(Searc
         Time::delay(0.1);
         yDebug() << ".";
     }
-
-	///////////////////////////////////////////////////////////////////////
-	////////Connection to the velocity control module//////////////////////
-	///////////////////////////////////////////////////////////////////////
-
-	// ///normal connection
-	// sprintf(tmp1,"/%s/vcControl",partName.c_str());
-	// if(!vcControl_port.open(tmp1))
-	// {
-	// 	printf("Cannot open vcControl port of %s\n",partName.c_str());
-	// 	return false;
-	// }
-	//
-	// sprintf(tmp2,ICUB_PATH"/vc/%s/input",partName.c_str());
-	//
-	// if(!Network::connect(tmp1,tmp2))
-	// {
-	// 	printf("Cannot connect to vc/input port of %s\n",partName.c_str());
-	// 	return false;
-	// }
-	//
-	// ///connection to the thread
-	//
-	// sprintf(tmp1,"/%s/vcFastCommand",partName.c_str());
-	//
-	// if(!vcFastCommand_port.open(tmp1))
-	// {
-	// 	printf("Cannot open vcFastCommand port of %s\n",partName.c_str());
-	// 	return false;
-	// }
-	//
-	// sprintf(tmp2,ICUB_PATH"/vc/%s/fastCommand",partName.c_str());
-	//
-	// if(!Network::connect(tmp1,tmp2,"udp"))
-	// {
-	// 	printf("Cannot connect to vc/fastCommand port of %s\n",partName.c_str());
-	// 	return false;
-	// }
 
 #endif
 
@@ -981,98 +830,7 @@ bool GeneratorThread::init(yarp::os::ResourceFinder &rf)//CTmodified: init(Searc
 		return false;
 	}
 
-#if !DEBUG
-	/* Add run command on each joint to start the velocity controller */
-	// for(int i=0;i<nbDOFs;i++)
-	// 		{
-	// 			//double vel = mv.get(i+1).asDouble();
-	//
-	// 			Bottle& cmd = vcControl_port.prepare();
-	//
-	// 			cmd.clear();
-	// 			cmd.addVocab(Vocab::encode("run"));
-	//
-	// 			cmd.addInt(jointMapping[i]);
-	//
-	// 			cmd.addString("run");
-	//
-	// 			vcControl_port.write(true);
-	//
-	// 			Time::delay(0.1);
-	// 		}
-	//
-	//
-	// //reading the max velocity in conf file
-	// if(options.check("maxVelocity"))
-	// {
-	// 	Bottle& mv = options.findGroup("maxVelocity");
-	//
-	// 	if(mv.size()!=nbDOFs+1)
-	// 		printf("wrong number of max velocity\n");
-	// 	else
-	// 	{
-	// 		for(int i=0;i<nbDOFs;i++)
-	// 		{
-	// 			double vel = mv.get(i+1).asDouble();
-	//
-	// 			Bottle& cmd = vcControl_port.prepare();
-	//
-	// 			cmd.clear();
-	// 			cmd.addVocab(Vocab::encode("svel"));
-	//
-	// 			cmd.addInt(jointMapping[i]);
-	//
-	// 			cmd.addDouble(vel);
-	//
-	// 			vcControl_port.write(true);
-	//
-	// 			Time::delay(0.1);
-	// 		}
-	// 	}
-	// }
-	// else
-	// 	printf("no max velocity defined, using default\n");
-
-
-
-	//
-	// ///reading the Kp gains in the conf file
-	// if(options.check("controlGains"))
-	// {
-	// 	Bottle& botG = options.findGroup("controlGains");
-	//
-	// 	if(botG.size()!=nbDOFs+1)
-	// 		printf("wrong number of gains\n");
-	// 	else
-	// 	{
-	// 		for(int i=0;i<nbDOFs;i++)
-	// 		{
-	// 			double gain = botG.get(i+1).asDouble();
-	//
-	// 			Bottle& cmd = vcControl_port.prepare();
-	//
-	// 			cmd.clear();
-	//
-	// 			cmd.addVocab(Vocab::encode("gain"));
-	//
-	// 			cmd.addInt(jointMapping[i]);
-	//
-	// 			cmd.addDouble(gain);
-	//
-	// 			vcControl_port.write(true);
-	//
-	// 			Time::delay(0.1);
-	// 		}
-	// 	}
-	// }
-	// else
-	// 	printf("no gains defined, using 0\n");
-
-#endif
-
-
-
-	///getting the joint limit
+	///getting the joint limits
 	//up
 	if(options.check("joint_limit_up"))
 	{
@@ -1125,12 +883,6 @@ bool GeneratorThread::init(yarp::os::ResourceFinder &rf)//CTmodified: init(Searc
 		return false;
 	}
 
-
-
-
-
-
-
 	///we create the vectors
 	fflush(stdout);
     y_cpgs = new double[nbDOFs*4+2*nbLIMBs+1]; //4 states per internal dof + 2 per coupled dof + 1 go command
@@ -1173,6 +925,8 @@ bool GeneratorThread::init(yarp::os::ResourceFinder &rf)//CTmodified: init(Searc
 		}
 	}
 
+	// FIXME : when are the encoder values defined ?
+	// FIXME : duplicate of the initialisation of positionCommand ?
 	for(int i=0; i< nbDOFs; i++)
 	{
 		states[i]=encoders[i];
@@ -1233,7 +987,7 @@ bool GeneratorThread::init(yarp::os::ResourceFinder &rf)//CTmodified: init(Searc
 		return false;
 	}
 
-	//we get tje external couplings
+	//we get the external couplings
 	if(options.check("External_coupling"))
 	{
 		Bottle& tmpBot = options.findGroup("External_coupling");
