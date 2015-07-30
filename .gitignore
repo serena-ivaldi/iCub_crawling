@@ -26,3 +26,6 @@ build*/
 
 # Linux temp files
 *~
+
+# dat data files
+app/*.dat
