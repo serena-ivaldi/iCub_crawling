@@ -74,7 +74,7 @@ How to use it on iCub:
 3. move to the `app` folder
 4. launch the yarp manager with the application description for the crawlGenerator module
     ~~~
-    yarpmanager --application yarpmananger/crawling-gazebo.xml
+    yarpmanager --application yarpmanager/crawling-gazebo.xml
     ~~~
     One only needs to open the Crawling applicaion (couble-click on it) and launch it by pressing the green button with a play-like shape.
 5. launch crawlManager (from `modules/crawlManager/build`)
