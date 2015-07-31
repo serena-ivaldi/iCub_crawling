@@ -39,6 +39,8 @@ ccmake ..
 make
 ~~~
 
+Where "crawlManager" has to be replaced by the name of the module to be compiled.
+
 To make sure the configuration file `crawling_managerConfig.ini` is read correctly by the module, add these lines to `.bashrc` (if you are on Linux) or `.bash_profile` (if you are on OSX).
 ~~~
 export crawling_root=PATH_WHERE_YOU_PUT_THE_CRAWLING_PROJECT/iCub_crawling
@@ -74,7 +76,7 @@ How to use it on iCub:
 3. move to the `app` folder
 4. launch the yarp manager with the application description for the crawlGenerator module
     ~~~
-    yarpmanager --application yarpmananger/crawling-gazebo.xml
+    yarpmanager --application yarpmanager/crawling-gazebo.xml
     ~~~
     One only needs to open the Crawling applicaion (couble-click on it) and launch it by pressing the green button with a play-like shape.
 5. launch crawlManager (from `modules/crawlManager/build`)
