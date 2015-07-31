@@ -39,6 +39,8 @@ ccmake ..
 make
 ~~~
 
+Where "crawlManager" has to be replaced by the name of the module to be compiled.
+
 To make sure the configuration file `crawling_managerConfig.ini` is read correctly by the module, add these lines to `.bashrc` (if you are on Linux) or `.bash_profile` (if you are on OSX).
 ~~~
 export crawling_root=PATH_WHERE_YOU_PUT_THE_CRAWLING_PROJECT/iCub_crawling
